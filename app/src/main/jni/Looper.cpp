@@ -11,14 +11,6 @@
 
 #define LOGI(...)   __android_log_print((int)ANDROID_LOG_INFO, "SOUNDPROCESS", __VA_ARGS__)
 
-static void playerEventCallbackA(void *clientData, SuperpoweredAdvancedAudioPlayerEvent event, void *value) {
-    if (event == SuperpoweredAdvancedAudioPlayerEvent_LoadSuccess) {
-    	SuperpoweredAdvancedAudioPlayer *playerA = *((SuperpoweredAdvancedAudioPlayer **)clientData);
-        playerA->setBpm(126.0f);
-        playerA->setFirstBeatMs(353);
-        playerA->setPosition(playerA->firstBeatMs, false, false);
-    };
-}
 
 static void playerEventCallbackB(void *clientData, SuperpoweredAdvancedAudioPlayerEvent event, void *value) {
     if (event == SuperpoweredAdvancedAudioPlayerEvent_LoadSuccess) {
@@ -29,55 +21,78 @@ static void playerEventCallbackB(void *clientData, SuperpoweredAdvancedAudioPlay
     };
 }
 
-static bool audioProcessing(void *clientdata, short int *audioIO, int numberOfSamples, int samplerate) {
+static bool audioplaying(void *clientdata, short int *audioIO, int numberOfSamples, int samplerate) {
 	return ((Looper *)clientdata)->process(audioIO, numberOfSamples);
 }
 
-Looper::Looper(const char *path, int *params) : activeFx(0), crossValue(0.0f),
+Looper::Looper(const char *path, int *params, bool useThreading) : activeFx(0), crossValue(0.0f),
                                         volB(0.0f), volA(1.0f * headroom), currentReadBuffer(0), currentWriteBuffer(0),
-                                        fullBuffers(0), processing(false), buffersize(params[5]) {
+                                        fullBuffers(0), playing(false), buffersize(params[5]), useProcessThread(useThreading), 
+                                        recording(false), metronome(std::string(path), params[0], params[1], params[4], 120)                                                                    {
 
     pthread_mutex_init(&mutex, NULL); // This will keep our player volumes and playback states in sync.
     unsigned int samplerate = params[4];
     std::fill(processed.begin(), processed.end(), std::vector<short int>(buffersize * 2 + 16));
-
     stereoBuffer = (float *)memalign(16, (buffersize + 16) * sizeof(float) * 2);
 
-    playerA = new SuperpoweredAdvancedAudioPlayer(&playerA , playerEventCallbackA, samplerate, 0);
-    playerA->open(path, params[0], params[1]);
     playerB = new SuperpoweredAdvancedAudioPlayer(&playerB, playerEventCallbackB, samplerate, 0);
     playerB->open(path, params[2], params[3]);
 
-    playerA->syncMode = playerB->syncMode = SuperpoweredAdvancedAudioPlayerSyncMode_TempoAndBeat;
+    playerB->syncMode = SuperpoweredAdvancedAudioPlayerSyncMode_TempoAndBeat;
+
+    audioRecorder = std::make_shared<SuperpoweredRecorder>("/storage/emulated/0/Download/helltest.wav", samplerate);
 
     roll = new SuperpoweredRoll(samplerate);
     filter = new SuperpoweredFilter(SuperpoweredFilter_Resonant_Lowpass, samplerate);
     flanger = new SuperpoweredFlanger(samplerate);
 
-    audioSystem = new SuperpoweredAndroidAudioIO(samplerate, buffersize, false, true, audioProcessing, this, 0);
+    onCrossfader(5);
+
+
+    audioSystem = new SuperpoweredAndroidAudioIO(samplerate, buffersize, true, true, audioplaying, this, buffersize * 2);
+    audioSystem->start();
+
 }
 
 Looper::~Looper() {
-    delete playerA;
     delete playerB;
     delete audioSystem;
     free(stereoBuffer);
     pthread_mutex_destroy(&mutex);
 }
 
+void Looper::setProcessThread(bool useThreading) {
+    useProcessThread = useThreading;
+}
+void Looper::onStartStopRecording(bool record) {
+    pthread_mutex_lock(&mutex);
+    if(!record) {
+        recording = false;
+        audioRecorder->stop();
+    }
+    else {
+        LOGI("RECORDING");
+        recording = true;
+        audioRecorder->start("/storage/emulated/0/Download/hellper");
+    }
+    pthread_mutex_unlock(&mutex);
+}
 void Looper::onPlayPause(bool play) {
     pthread_mutex_lock(&mutex);
     if (!play) {
-        playerA->pause();
+        metronome.pause();
         playerB->pause();
-        processing = false;
+        playing = false;
     } else {
         bool masterIsA = (crossValue <= 0.5f);
-        playerA->play(!masterIsA);
-        playerB->play(masterIsA);
-        processing = true;
-        std::thread t(&Looper::processLoop, this);
-        t.detach();
+        metronome.play();
+        playerB->play(true);
+        playing = true;
+        if (useProcessThread)
+        {
+            std::thread t(&Looper::processLoop, this);
+            t.detach();
+        }
     };
     pthread_mutex_unlock(&mutex);
 }
@@ -146,98 +161,105 @@ void Looper::onFxValue(int ivalue) {
     };
 }
 
+void Looper::recordSamples(short int *output, unsigned int numberOfSamples)
+{
+    //LOGI("RECORDING: %d", numberOfSamples);
+    SuperpoweredShortIntToFloat(output, stereoBuffer, numberOfSamples);
+    audioRecorder->process(stereoBuffer, NULL, numberOfSamples);
+}
+
 bool Looper::process(short int *output, unsigned int numberOfSamples) {
 
     //LOGI("IN PROCESS %d", numberOfSamples);
-    bool silence = fullBuffers == 0;
-    if (!silence)
+    if (recording)
     {
+        recordSamples(output, numberOfSamples);
+    }
+    if (useProcessThread)
+    {
+        bool silence = fullBuffers == 0;
+        if (!silence)
+        {
 
-        auto& curBuff = processed.at(currentReadBuffer);
+            auto& curBuff = processed.at(currentReadBuffer);
 
-        copy(curBuff.begin(), curBuff.end(), output);
+            copy(curBuff.begin(), curBuff.end(), output);
 
-        if (currentReadBuffer == NUM_BUFFERS - 1)
-            currentReadBuffer = 0;
+            if (currentReadBuffer == NUM_BUFFERS - 1)
+                currentReadBuffer = 0;
+            else
+                ++currentReadBuffer;
+             --fullBuffers;
+
+        }
         else
-            ++currentReadBuffer;
-         --fullBuffers;
-
+        {
+            LOGI("DRY!!");
+        }
+        return !silence;
     }
     else
     {
-        LOGI("DRY!!");
+        bool silence = renderSamples(output, numberOfSamples);
+        return !silence;
     }
-    //loopCv.notify_all();
-    //
-    return !silence;
+
+}
+
+bool Looper::renderSamples(short int *output, unsigned int numberOfSamples)
+{
+    pthread_mutex_lock(&mutex);
+    bool silence = true;
+    if (!useProcessThread || fullBuffers < NUM_BUFFERS)
+    {
+        //LOGI("sam %d %d", numberOfSamples, currentWriteBuffer);
+
+        float masterBpm = metronome.getCurrentBpm();
+
+        double msElapsedSinceLastBeatA = metronome.getMsElapsedSinceLastBeat(); // When playerB needs it, metronome has already stepped this value, so save it now.
+
+        silence = !metronome.process(stereoBuffer, numberOfSamples, volA, playerB->msElapsedSinceLastBeat);
+        if (playerB->process(stereoBuffer, !silence, numberOfSamples, volB, masterBpm, msElapsedSinceLastBeatA)) silence = false;
+
+        roll->bpm = flanger->bpm = masterBpm; // Syncing fx is one line.
+
+        if (roll->process(silence ? NULL : stereoBuffer, stereoBuffer, numberOfSamples) && silence) silence = false;
+        if (!silence) {
+            filter->process(stereoBuffer, stereoBuffer, numberOfSamples);
+            flanger->process(stereoBuffer, stereoBuffer, numberOfSamples);
+        };
+
+        // The stereoBuffer is ready now, let's put the finished audio into the requested buffers.
+        if(!silence)
+        {
+            SuperpoweredFloatToShortInt(stereoBuffer, output, numberOfSamples);
+            if (currentWriteBuffer == NUM_BUFFERS - 1)
+                currentWriteBuffer = 0;
+             else
+                ++currentWriteBuffer;
+            ++fullBuffers;
+        }
+    }
+    pthread_mutex_unlock(&mutex);
+    return silence;
+
 }
 
 void Looper::processLoop()
 {
-    while (processing)
+    while (playing)
     {
+        renderSamples(&processed[currentWriteBuffer][0], buffersize);
         //LOGI("IN loop %d", fullBuffers);
-        pthread_mutex_lock(&mutex);
-        if (fullBuffers < NUM_BUFFERS)
-        {
-            static int numberOfSamples = buffersize;
-            //LOGI("sam %d %d", numberOfSamples, currentWriteBuffer);
-
-            bool masterIsA = (crossValue <= 0.5f);
-            float masterBpm = masterIsA ? playerA->currentBpm : playerB->currentBpm;
-            double msElapsedSinceLastBeatA = playerA->msElapsedSinceLastBeat; // When playerB needs it, playerA has already stepped this value, so save it now.
-
-            bool silence = !playerA->process(stereoBuffer, false, numberOfSamples, volA, masterBpm, playerB->msElapsedSinceLastBeat);
-            if (playerB->process(stereoBuffer, !silence, numberOfSamples, volB, masterBpm, msElapsedSinceLastBeatA)) silence = false;
-
-            roll->bpm = flanger->bpm = masterBpm; // Syncing fx is one line.
-
-            if (roll->process(silence ? NULL : stereoBuffer, stereoBuffer, numberOfSamples) && silence) silence = false;
-            if (!silence) {
-                filter->process(stereoBuffer, stereoBuffer, numberOfSamples);
-                flanger->process(stereoBuffer, stereoBuffer, numberOfSamples);
-            };
-
-            // The stereoBuffer is ready now, let's put the finished audio into the requested buffers.
-            if(!silence)
-            {
-                //LOGI("notsilence");
-                SuperpoweredFloatToShortInt(stereoBuffer, &processed[currentWriteBuffer][0], numberOfSamples);
-                if (currentWriteBuffer == NUM_BUFFERS - 1)
-                    currentWriteBuffer = 0;
-                 else
-                    ++currentWriteBuffer;
-                ++fullBuffers;
-            }
-            pthread_mutex_unlock(&mutex);
-
-        }
-        else
-        {
-            pthread_mutex_unlock(&mutex);
-            //LOGI("IN WAIT");
-            //std::unique_lock<std::mutex> lock(loopMutex);
-            //loopCv.wait(lock);
-        }
-        //pthread_mutex_unlock(&mutex);
-
 
     }
 }
 
-extern "C" {
-	JNIEXPORT void Java_com_superpowered_crossexample_MainActivity_Looper(JNIEnv *javaEnvironment, jobject self, jstring apkPath, jlongArray offsetAndLength);
-	JNIEXPORT void Java_com_superpowered_crossexample_MainActivity_onPlayPause(JNIEnv *javaEnvironment, jobject self, jboolean play);
-	JNIEXPORT void Java_com_superpowered_crossexample_MainActivity_onCrossfader(JNIEnv *javaEnvironment, jobject self, jint value);
-	JNIEXPORT void Java_com_superpowered_crossexample_MainActivity_onFxSelect(JNIEnv *javaEnvironment, jobject self, jint value);
-	JNIEXPORT void Java_com_superpowered_crossexample_MainActivity_onFxOff(JNIEnv *javaEnvironment, jobject self);
-	JNIEXPORT void Java_com_superpowered_crossexample_MainActivity_onFxValue(JNIEnv *javaEnvironment, jobject self, jint value);
-}
+
 
 static Looper *looper = NULL;
 // Android is not passing more than 2 custom parameters, so we had to pack file offsets and lengths into an array.
-extern "C" JNIEXPORT void Java_com_smp_looperstudio_LooperActivity_Looper(JNIEnv *javaEnvironment, jobject self, jstring apkPath, jlongArray params) {
+extern "C" JNIEXPORT void Java_com_smp_looperstudio_LooperActivity_Looper(JNIEnv *javaEnvironment, jobject self, jstring apkPath, jlongArray params, jboolean useThreading) {
     // Convert the input jlong array to a regular int array.
     jlong *longParams = javaEnvironment->GetLongArrayElements(params, JNI_FALSE);
     int arr[6];
@@ -245,11 +267,15 @@ extern "C" JNIEXPORT void Java_com_smp_looperstudio_LooperActivity_Looper(JNIEnv
     javaEnvironment->ReleaseLongArrayElements(params, longParams, JNI_ABORT);
 
     const char *path = javaEnvironment->GetStringUTFChars(apkPath, JNI_FALSE);
-    looper = new Looper(path, arr);
+    looper = new Looper(path, arr, useThreading);
     javaEnvironment->ReleaseStringUTFChars(apkPath, path);
 
 }
 
 extern "C" JNIEXPORT void Java_com_smp_looperstudio_LooperActivity_onPlayPause(JNIEnv *javaEnvironment, jobject self, jboolean play) {
     looper->onPlayPause(play);
+}
+
+extern "C" JNIEXPORT void Java_com_smp_looperstudio_LooperActivity_onRecord(JNIEnv *javaEnvironment, jobject self, jboolean record) {
+    looper->onStartStopRecording(record);
 }

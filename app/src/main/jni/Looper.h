@@ -9,12 +9,16 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <memory>
 
 #include "SuperpoweredAdvancedAudioPlayer.h"
 #include "SuperpoweredFilter.h"
 #include "SuperpoweredRoll.h"
 #include "SuperpoweredFlanger.h"
 #include "SuperpoweredAndroidAudioIO.h"
+#include "SuperpoweredRecorder.h"
+#include "Metronome.h"
+#include "RecordingTrack.h"
 
 #define NUM_BUFFERS 2
 #define HEADROOM_DECIBEL 3.0f
@@ -23,11 +27,13 @@ static const float headroom = powf(10.0f, -HEADROOM_DECIBEL * 0.025);
 class Looper {
 public:
 
-	Looper(const char *path, int *params);
+	Looper(const char *path, int *params, bool);
 	~Looper();
 
 	bool process(short int *output, unsigned int numberOfSamples);
+	void setProcessThread(bool);
 	void onPlayPause(bool play);
+	void onStartStopRecording(bool);
 	void onCrossfader(int value);
 	void onFxSelect(int value);
 	void onFxOff();
@@ -35,18 +41,28 @@ public:
 
 private:
     void processLoop();
+    void recordSamples(short int *, unsigned int);
+    bool renderSamples(short int *, unsigned int);
 
     std::array<std::vector<short int>, NUM_BUFFERS> processed;
     int currentReadBuffer;
     int currentWriteBuffer;
     std::atomic_int fullBuffers;
-    bool processing;
-    std::atomic_int buffersize;
+    std::atomic_bool playing;
+    std::atomic_bool recording;
+    std::atomic_bool useProcessThread;
+    int buffersize;
+
+    Metronome metronome;
+
+
 
     std::mutex loopMutex;
     std::condition_variable loopCv;
 
     pthread_mutex_t mutex;
+
+    std::shared_ptr<SuperpoweredRecorder> audioRecorder;
     SuperpoweredAndroidAudioIO *audioSystem;
     SuperpoweredAdvancedAudioPlayer *playerA, *playerB;
     SuperpoweredRoll *roll;

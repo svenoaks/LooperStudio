@@ -16,6 +16,8 @@ import java.io.IOException;
 
 public class LooperActivity extends ActionBarActivity
 {
+    private boolean recording = false;
+    private boolean playing = false;
     static {
         System.loadLibrary("Looper");
     }
@@ -35,7 +37,7 @@ public class LooperActivity extends ActionBarActivity
 
         Log.i("INFOBLAHBLAH", buffersizeString);
         // Files under res/raw are not compressed, just copied into the APK. Get the offset and length to know where our files are located.
-        AssetFileDescriptor fd0 = getResources().openRawResourceFd(R.raw.lycka), fd1 = getResources().openRawResourceFd(R.raw.nuyorica);
+        AssetFileDescriptor fd0 = getResources().openRawResourceFd(R.raw.fourfour), fd1 = getResources().openRawResourceFd(R.raw.nuyorica);
         long[] params = {
                 fd0.getStartOffset(),
                 fd0.getLength(),
@@ -49,12 +51,19 @@ public class LooperActivity extends ActionBarActivity
             fd1.getParcelFileDescriptor().close();
         } catch (IOException e) {}
 
-        Looper(getPackageResourcePath(), params);
+        Looper(getPackageResourcePath(), params, false);
     }
 
     public void onPlayPause(View view)
     {
-        onPlayPause(true);
+        playing = !playing;
+        onPlayPause(playing);
+
+    }
+    public void onRecord(View view) {
+        recording = !recording;
+        onRecord(recording);
+
     }
 
     @Override
@@ -82,6 +91,7 @@ public class LooperActivity extends ActionBarActivity
         return super.onOptionsItemSelected(item);
     }
 
-    private static native void Looper(String apkPath, long[] offsetAndLength);
+    private static native void Looper(String apkPath, long[] offsetAndLength, boolean useThreading);
     private static native void onPlayPause(boolean play);
+    private static native void onRecord(boolean record);
 }

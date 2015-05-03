@@ -44,12 +44,16 @@
  /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/mutex \
  /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/condition_variable \
  /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/atomic \
+ /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/memory \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredAdvancedAudioPlayer.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredFilter.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredFX.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredRoll.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredFlanger.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredAndroidAudioIO.h \
+ /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredRecorder.h \
+ /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/Metronome.h \
+ /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/RecordingTrack.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredSimple.h \
  /Applications/sdk/android-ndk-r10d/platforms/android-9/arch-arm/usr/include/jni.h \
  /Applications/sdk/android-ndk-r10d/platforms/android-9/arch-arm/usr/include/stdlib.h \
@@ -147,6 +151,8 @@
 
 /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/atomic:
 
+/Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/memory:
+
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredAdvancedAudioPlayer.h:
 
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredFilter.h:
@@ -158,6 +164,12 @@
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredFlanger.h:
 
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredAndroidAudioIO.h:
+
+/Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredRecorder.h:
+
+/Users/Steve/Code/Git/LooperStudio/app/src/main/jni/Metronome.h:
+
+/Users/Steve/Code/Git/LooperStudio/app/src/main/jni/RecordingTrack.h:
 
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredSimple.h:
 

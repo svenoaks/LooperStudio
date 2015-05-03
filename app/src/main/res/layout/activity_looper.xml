@@ -9,9 +9,16 @@
                 tools:context="com.smp.looperstudio.LooperActivity">
 
     <Button
+        android:id="@+id/button_play"
         android:text="@string/button_play"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="onPlayPause"/>
+    <Button
+        android:layout_below="@id/button_play"
+        android:text="@string/button_record"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="onRecord"/>
 
 </RelativeLayout>

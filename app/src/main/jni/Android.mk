@@ -16,7 +16,9 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)  
 LOCAL_MODULE := Looper
 LOCAL_SRC_FILES := Looper.cpp \
-SuperpoweredAndroidAudioIO.cpp
+SuperpoweredAndroidAudioIO.cpp \
+RecordingTrack.cpp \
+Metronome.cpp
 LOCAL_LDLIBS := -llog -landroid -lOpenSLES 
 LOCAL_STATIC_LIBRARIES := Superpowered
 LOCAL_CFLAGS = -O2

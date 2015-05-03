@@ -21,7 +21,7 @@ typedef bool (*audioProcessingCallback) (void *clientdata, short int *audioIO, i
 class SuperpoweredAndroidAudioIO {
 public:
 /**
- @brief Creates an audio I/O instance. Audio input and/or output immediately starts after calling this.
+ @brief Creates an audio I/O instance. Audio input and/or output will not start until startOutputProcessing() and/or startInputProcessing() is called.
 
  @param samplerate The requested sample rate in Hz.
  @param buffersize The requested buffer size (number of samples).
@@ -33,6 +33,17 @@ public:
  */
     SuperpoweredAndroidAudioIO(int samplerate, int buffersize, bool enableInput, bool enableOutput, audioProcessingCallback callback, void *clientdata, int latencySamples = 0);
     ~SuperpoweredAndroidAudioIO();
+/**
+ @brief Starts (or resumes) output processing. Callbacks will begin after this is called. No-op is object was constructed with enableOutput == false.
+ */
+    void start();
+/**
+ @brief Starts (or resumes) input processing. Callbacks will begin after this is called. No-op is object was constructed with enableInput == false.
+ */
+
+
+    void pause();
+
 
 private:
     SuperpoweredAndroidAudioIOInternals *internals;
