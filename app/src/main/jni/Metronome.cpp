@@ -14,9 +14,10 @@ static void playerEventCallback(void *clientData, SuperpoweredAdvancedAudioPlaye
         player->setFirstBeatMs(START_POINT);
         player->setPosition(player->firstBeatMs, false, false);
         player->cachePosition(START_POINT, NO_ID);
+       
     }
     else if (event == SuperpoweredAdvancedAudioPlayerEvent_EOF) {
-            player->setPosition(START_POINT, false, false);
+            player->setPosition(START_POINT, false, true);
     };
 }
 
