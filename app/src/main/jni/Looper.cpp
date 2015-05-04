@@ -9,6 +9,8 @@
 
 #include <string>
 
+#define INIT_BPM 120
+
 #define LOGI(...)   __android_log_print((int)ANDROID_LOG_INFO, "SOUNDPROCESS", __VA_ARGS__)
 
 
@@ -28,9 +30,9 @@ static bool audioplaying(void *clientdata, short int *audioIO, int numberOfSampl
 Looper::Looper(const char *path, int *params, bool useThreading) : activeFx(0), crossValue(0.0f),
                                         volB(0.0f), volA(1.0f * headroom), currentReadBuffer(0), currentWriteBuffer(0),
                                         fullBuffers(0), playing(false), buffersize(params[5]), useProcessThread(useThreading), 
-                                        recording(false), metronome(std::string(path), params[0], params[1], params[4], 120)                                                                    {
+                                        recording(false), metronome(std::string(path), params[0], params[1], params[4], INIT_BPM)                                                                    {
 
-    pthread_mutex_init(&mutex, NULL); // This will keep our player volumes and playback states in sync.
+    
     unsigned int samplerate = params[4];
     std::fill(processed.begin(), processed.end(), std::vector<short int>(buffersize * 2 + 16));
     stereoBuffer = (float *)memalign(16, (buffersize + 16) * sizeof(float) * 2);
@@ -58,14 +60,13 @@ Looper::~Looper() {
     delete playerB;
     delete audioSystem;
     free(stereoBuffer);
-    pthread_mutex_destroy(&mutex);
 }
 
 void Looper::setProcessThread(bool useThreading) {
     useProcessThread = useThreading;
 }
 void Looper::onStartStopRecording(bool record) {
-    pthread_mutex_lock(&mutex);
+    std::unique_lock<std::mutex> lock(mutex);
     if(!record) {
         recording = false;
         audioRecorder->stop();
@@ -75,10 +76,10 @@ void Looper::onStartStopRecording(bool record) {
         recording = true;
         audioRecorder->start("/storage/emulated/0/Download/hellper");
     }
-    pthread_mutex_unlock(&mutex);
+   
 }
 void Looper::onPlayPause(bool play) {
-    pthread_mutex_lock(&mutex);
+    std::unique_lock<std::mutex> lock(mutex);
     if (!play) {
         metronome.pause();
         playerB->pause();
@@ -94,11 +95,11 @@ void Looper::onPlayPause(bool play) {
             t.detach();
         }
     };
-    pthread_mutex_unlock(&mutex);
+
 }
 
 void Looper::onCrossfader(int value) {
-    pthread_mutex_lock(&mutex);
+    std::unique_lock<std::mutex> lock(mutex);
     crossValue = float(value) * 0.01f;
     if (crossValue < 0.01f) {
         volA = 1.0f * headroom;
@@ -110,7 +111,7 @@ void Looper::onCrossfader(int value) {
         volA = cosf(M_PI_2 * crossValue) * headroom;
         volB = cosf(M_PI_2 * (1.0f - crossValue)) * headroom;
     };
-    pthread_mutex_unlock(&mutex);
+
 }
 
 void Looper::onFxSelect(int value) {
@@ -208,7 +209,7 @@ bool Looper::process(short int *output, unsigned int numberOfSamples) {
 
 bool Looper::renderSamples(short int *output, unsigned int numberOfSamples)
 {
-    pthread_mutex_lock(&mutex);
+    std::unique_lock<std::mutex> lock(mutex);
     bool silence = true;
     if (!useProcessThread || fullBuffers < NUM_BUFFERS)
     {
@@ -240,7 +241,6 @@ bool Looper::renderSamples(short int *output, unsigned int numberOfSamples)
             ++fullBuffers;
         }
     }
-    pthread_mutex_unlock(&mutex);
     return silence;
 
 }
@@ -279,3 +279,7 @@ extern "C" JNIEXPORT void Java_com_smp_looperstudio_LooperActivity_onPlayPause(J
 extern "C" JNIEXPORT void Java_com_smp_looperstudio_LooperActivity_onRecord(JNIEnv *javaEnvironment, jobject self, jboolean record) {
     looper->onStartStopRecording(record);
 }
+
+#undef NUM_BUFFERS
+#undef HEADROOM_DECIBEL
+#undef INIT_BPM

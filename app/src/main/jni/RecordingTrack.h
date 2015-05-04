@@ -12,11 +12,13 @@
 
 class RecordingTrack {
     public:
-    RecordingTrack(int samplingRate, std::string filePath);
+    RecordingTrack(int samplingRate, std::string filePath, double);
     void startRecord();
-    void recordBytes(std::vector<short int>);
+    void recordProcess(short int *, int, double);
     private:
-    SuperpoweredAdvancedAudioPlayer player;
+    void setBpm(double);
+    uint64_t calculateBufferPos(double);
+    std::shared_ptr<SuperpoweredAdvancedAudioPlayer> player;
     SuperpoweredRecorder recorder;
     std::vector<short int> recBuffer;
     std::string filePath;

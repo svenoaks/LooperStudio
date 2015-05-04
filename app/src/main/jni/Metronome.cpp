@@ -8,15 +8,15 @@
 static void playerEventCallback(void *clientData, SuperpoweredAdvancedAudioPlayerEvent event,
                                                                                  void *value) {
 
-    SuperpoweredAdvancedAudioPlayer *playerA = *((SuperpoweredAdvancedAudioPlayer **)clientData);
+    SuperpoweredAdvancedAudioPlayer *player = *((SuperpoweredAdvancedAudioPlayer **)clientData);
     if (event == SuperpoweredAdvancedAudioPlayerEvent_LoadSuccess) {
-        playerA->setBpm(RECORDED_BPM);
-        playerA->setFirstBeatMs(START_POINT);
-        playerA->setPosition(playerA->firstBeatMs, false, false);
-        playerA->cachePosition(START_POINT, NO_ID);
+        player->setBpm(RECORDED_BPM);
+        player->setFirstBeatMs(START_POINT);
+        player->setPosition(player->firstBeatMs, false, false);
+        player->cachePosition(START_POINT, NO_ID);
     }
     else if (event == SuperpoweredAdvancedAudioPlayerEvent_EOF) {
-            playerA->setPosition(START_POINT, false, false);
+            player->setPosition(START_POINT, false, false);
     };
 }
 

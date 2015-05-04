@@ -55,12 +55,9 @@ private:
 
     Metronome metronome;
 
-
-
-    std::mutex loopMutex;
     std::condition_variable loopCv;
 
-    pthread_mutex_t mutex;
+    std::mutex mutex;
 
     std::shared_ptr<SuperpoweredRecorder> audioRecorder;
     SuperpoweredAndroidAudioIO *audioSystem;
