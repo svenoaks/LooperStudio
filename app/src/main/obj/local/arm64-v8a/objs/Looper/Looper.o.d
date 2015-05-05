@@ -64,6 +64,7 @@
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/Metronome.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/RecordingTrack.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredSimple.h \
+ /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/utility.h \
  /Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/jni.h \
  /Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/stdlib.h \
  /Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/alloca.h \
@@ -199,6 +200,8 @@
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/RecordingTrack.h:
 
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredSimple.h:
+
+/Users/Steve/Code/Git/LooperStudio/app/src/main/jni/utility.h:
 
 /Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/jni.h:
 

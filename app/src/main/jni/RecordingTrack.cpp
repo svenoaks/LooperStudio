@@ -1,4 +1,6 @@
+#include <thread>
 #include "RecordingTrack.h"
+
 
 #define CACHE_POINTS 2
 #define INIT_SIZE 960000
@@ -21,7 +23,7 @@ static void playerEventCallback(void *clientData, SuperpoweredAdvancedAudioPlaye
     };
 }
 
-RecordingTrack::RecordingTrack(int samplingRate, std::string filePath, double bpm) :
+RecordingTrack::RecordingTrack(unsigned int samplingRate, std::string filePath, double bpm) :
     recorder((filePath + "_TEMP").c_str(), samplingRate),
     recBuffer(INIT_SIZE, SILENCE),
     filePath(filePath)

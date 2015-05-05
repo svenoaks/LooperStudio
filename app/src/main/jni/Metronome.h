@@ -10,18 +10,16 @@
 
 class Metronome {
     public:
-    Metronome(std::string, int, int, int samplingRate, int bpm = 120);
+    Metronome(std::string, int, int, int samplingRate);
     void startRecord();
     void recordBytes(std::vector<short int>);
     void play();
     void pause();
     double getCurrentBpm();
-    void setCurrentBpm(double bpm);
     double getMsElapsedSinceLastBeat();
-    bool process(float *buffer, unsigned int numberOfSamples, float volume, double masterMsElapsedSinceLastBeat);
+    bool process(float *buffer, unsigned int numberOfSamples, float volume, double bpm, double masterMsElapsedSinceLastBeat);
     private:
     std::shared_ptr<SuperpoweredAdvancedAudioPlayer> player;
-    double bpm;
 };
 
 #endif

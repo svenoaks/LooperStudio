@@ -18,7 +18,8 @@ LOCAL_MODULE := Looper
 LOCAL_SRC_FILES := Looper.cpp \
 SuperpoweredAndroidAudioIO.cpp \
 RecordingTrack.cpp \
-Metronome.cpp
+Metronome.cpp \
+utility.cpp
 LOCAL_LDLIBS := -llog -landroid -lOpenSLES 
 LOCAL_STATIC_LIBRARIES := Superpowered
 LOCAL_CFLAGS = -O2

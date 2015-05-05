@@ -12,7 +12,7 @@
 
 class RecordingTrack {
     public:
-    RecordingTrack(int samplingRate, std::string filePath, double);
+    RecordingTrack(unsigned int samplingRate, std::string filePath, double);
     void startRecord();
     void recordProcess(short int *, int, double);
     private:

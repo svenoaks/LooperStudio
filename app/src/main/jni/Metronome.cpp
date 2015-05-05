@@ -14,14 +14,14 @@ static void playerEventCallback(void *clientData, SuperpoweredAdvancedAudioPlaye
         player->setFirstBeatMs(START_POINT);
         player->setPosition(player->firstBeatMs, false, false);
         player->cachePosition(START_POINT, NO_ID);
-       
+
     }
     else if (event == SuperpoweredAdvancedAudioPlayerEvent_EOF) {
             player->setPosition(START_POINT, false, true);
     };
 }
 
-Metronome::Metronome(std::string filePath, int start, int end, int samplingRate, int bpm) : bpm(bpm)
+Metronome::Metronome(std::string filePath, int start, int end, int samplingRate)
 {
     player = std::make_shared<SuperpoweredAdvancedAudioPlayer>(&player, playerEventCallback, samplingRate, CACHE_POINTS);
     player->open(filePath.c_str(), start, end);
@@ -38,14 +38,12 @@ void Metronome::pause() {
 double Metronome::getCurrentBpm() {
     return player->currentBpm;
 }
-void Metronome::setCurrentBpm(double bpm) {
-    this->bpm = bpm;
-}
+
 double Metronome::getMsElapsedSinceLastBeat() {
     return player->msElapsedSinceLastBeat;
 }
-bool Metronome::process(float *buffer, unsigned int numberOfSamples, float volume, double masterMsElapsedSinceLastBeat) {
-    return player->process(buffer, false, numberOfSamples, volume, getCurrentBpm(), masterMsElapsedSinceLastBeat);
+bool Metronome::process(float *buffer, unsigned int numberOfSamples, float volume, double bpm, double masterMsElapsedSinceLastBeat) {
+    return player->process(buffer, false, numberOfSamples, volume, bpm, masterMsElapsedSinceLastBeat);
 }
 #undef RECORDED_BPM
 #undef CACHE_POINTS

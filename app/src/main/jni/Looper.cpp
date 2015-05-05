@@ -1,6 +1,7 @@
 
 #include "Looper.h"
 #include "SuperpoweredSimple.h"
+#include "utility.h"
 #include <jni.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,10 +28,10 @@ static bool audioplaying(void *clientdata, short int *audioIO, int numberOfSampl
 	return ((Looper *)clientdata)->process(audioIO, numberOfSamples);
 }
 
-Looper::Looper(const char *path, int *params, bool useThreading) : activeFx(0), crossValue(0.0f),
+Looper::Looper(const char *path, int *params, bool useThreading, double bpm) : activeFx(0), crossValue(0.0f),
                                         volB(0.0f), volA(1.0f * headroom), currentReadBuffer(0), currentWriteBuffer(0),
                                         fullBuffers(0), playing(false), buffersize(params[5]), useProcessThread(useThreading), 
-                                        recording(false), metronome(std::string(path), params[0], params[1], params[4], INIT_BPM)                                                                    {
+                                        recording(false), metronome(std::string(path), params[0], params[1], params[4]), masterBpm(bpm)                                                                    {
 
     
     unsigned int samplerate = params[4];
@@ -50,15 +51,22 @@ Looper::Looper(const char *path, int *params, bool useThreading) : activeFx(0), 
 
     onCrossfader(5);
 
+    for (int i = 0; i < NUM_TRACKS; ++i)
+    {
+        tracks.emplace_back(samplerate, std::string("/storage/emulated/0/Download/recTrack") + std::to_string(i), bpm);
+    }
+
 
     audioSystem = new SuperpoweredAndroidAudioIO(samplerate, buffersize, true, true, audioplaying, this, buffersize * 2);
     audioSystem->start();
-
 }
 
 Looper::~Looper() {
     delete playerB;
     delete audioSystem;
+    delete roll;
+    delete filter;
+    delete flanger;
     free(stereoBuffer);
 }
 
@@ -215,11 +223,9 @@ bool Looper::renderSamples(short int *output, unsigned int numberOfSamples)
     {
         //LOGI("sam %d %d", numberOfSamples, currentWriteBuffer);
 
-        float masterBpm = metronome.getCurrentBpm();
-
         double msElapsedSinceLastBeatA = metronome.getMsElapsedSinceLastBeat(); // When playerB needs it, metronome has already stepped this value, so save it now.
 
-        silence = !metronome.process(stereoBuffer, numberOfSamples, volA, playerB->msElapsedSinceLastBeat);
+        silence = !metronome.process(stereoBuffer, numberOfSamples, volA, masterBpm, playerB->msElapsedSinceLastBeat);
         if (playerB->process(stereoBuffer, !silence, numberOfSamples, volB, masterBpm, msElapsedSinceLastBeatA)) silence = false;
 
         roll->bpm = flanger->bpm = masterBpm; // Syncing fx is one line.
@@ -255,6 +261,12 @@ void Looper::processLoop()
     }
 }
 
+void Looper::setBpm(double bpm)
+{
+    std::unique_lock<std::mutex> lock(mutex);
+    masterBpm = bpm;
+}
+
 
 
 static Looper *looper = NULL;
@@ -283,3 +295,4 @@ extern "C" JNIEXPORT void Java_com_smp_looperstudio_LooperActivity_onRecord(JNIE
 #undef NUM_BUFFERS
 #undef HEADROOM_DECIBEL
 #undef INIT_BPM
+#undef NUM_TRACKS
