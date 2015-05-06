@@ -7,41 +7,27 @@
 #include <stdio.h>
 #include <android/log.h>
 #include <thread>
-
 #include <string>
-
-#define INIT_BPM 120
 
 #define LOGI(...)   __android_log_print((int)ANDROID_LOG_INFO, "SOUNDPROCESS", __VA_ARGS__)
 
 
-static void playerEventCallbackB(void *clientData, SuperpoweredAdvancedAudioPlayerEvent event, void *value) {
-    if (event == SuperpoweredAdvancedAudioPlayerEvent_LoadSuccess) {
-    	SuperpoweredAdvancedAudioPlayer *playerB = *((SuperpoweredAdvancedAudioPlayer **)clientData);
-        playerB->setBpm(123.0f);
-        playerB->setFirstBeatMs(40);
-        playerB->setPosition(playerB->firstBeatMs, false, false);
-    };
-}
+
 
 static bool audioplaying(void *clientdata, short int *audioIO, int numberOfSamples, int samplerate) {
 	return ((Looper *)clientdata)->process(audioIO, numberOfSamples);
 }
 
-Looper::Looper(const char *path, int *params, bool useThreading, double bpm) : activeFx(0), crossValue(0.0f),
-                                        volB(0.0f), volA(1.0f * headroom), currentReadBuffer(0), currentWriteBuffer(0),
+Looper::Looper(const char *path, int *params, bool useThreading, double bpm, int measures, int beatsPerMeasure)
+                                        : activeFx(0), crossValue(0.0f), volB(0.0f), volA(1.0f * headroom), currentReadBuffer(0), currentWriteBuffer(0),
                                         fullBuffers(0), playing(false), buffersize(params[5]), useProcessThread(useThreading), 
-                                        recording(false), metronome(std::string(path), params[0], params[1], params[4]), masterBpm(bpm)                                                                    {
+                                        recording(false), metronome(std::string(path), params[0], params[1], params[4]), masterBpm(bpm),
+                                        samplesFromZero(0) {
 
     
     unsigned int samplerate = params[4];
     std::fill(processed.begin(), processed.end(), std::vector<short int>(buffersize * 2 + 16));
     stereoBuffer = (float *)memalign(16, (buffersize + 16) * sizeof(float) * 2);
-
-    playerB = new SuperpoweredAdvancedAudioPlayer(&playerB, playerEventCallbackB, samplerate, 0);
-    playerB->open(path, params[2], params[3]);
-
-    playerB->syncMode = SuperpoweredAdvancedAudioPlayerSyncMode_TempoAndBeat;
 
     audioRecorder = std::make_shared<SuperpoweredRecorder>("/storage/emulated/0/Download/helltest.wav", samplerate);
 
@@ -49,11 +35,9 @@ Looper::Looper(const char *path, int *params, bool useThreading, double bpm) : a
     filter = new SuperpoweredFilter(SuperpoweredFilter_Resonant_Lowpass, samplerate);
     flanger = new SuperpoweredFlanger(samplerate);
 
-    onCrossfader(5);
-
     for (int i = 0; i < NUM_TRACKS; ++i)
     {
-        tracks.emplace_back(samplerate, std::string("/storage/emulated/0/Download/recTrack") + std::to_string(i), bpm);
+        tracks.push_back(std::make_shared<RecordingTrack>(samplerate, "/storage/emulated/0/Download/helltest.wav" + std::to_string(i), bpm));
     }
 
 
@@ -62,7 +46,6 @@ Looper::Looper(const char *path, int *params, bool useThreading, double bpm) : a
 }
 
 Looper::~Looper() {
-    delete playerB;
     delete audioSystem;
     delete roll;
     delete filter;
@@ -73,7 +56,7 @@ Looper::~Looper() {
 void Looper::setProcessThread(bool useThreading) {
     useProcessThread = useThreading;
 }
-void Looper::onStartStopRecording(bool record) {
+void Looper::onStartStopRecording(bool record, int trackToRecord) {
     std::unique_lock<std::mutex> lock(mutex);
     if(!record) {
         recording = false;
@@ -81,8 +64,9 @@ void Looper::onStartStopRecording(bool record) {
     }
     else {
         LOGI("RECORDING");
+        currentlyRecordingTrack = trackToRecord;
         recording = true;
-        audioRecorder->start("/storage/emulated/0/Download/hellper");
+        tracks.at(currentlyRecordingTrack)->startRecord();
     }
    
 }
@@ -90,12 +74,12 @@ void Looper::onPlayPause(bool play) {
     std::unique_lock<std::mutex> lock(mutex);
     if (!play) {
         metronome.pause();
-        playerB->pause();
+        for (auto&& track : tracks) track->pause();
         playing = false;
     } else {
         bool masterIsA = (crossValue <= 0.5f);
         metronome.play();
-        playerB->play(true);
+        for (auto&& track : tracks) track->play();
         playing = true;
         if (useProcessThread)
         {
@@ -173,8 +157,9 @@ void Looper::onFxValue(int ivalue) {
 void Looper::recordSamples(short int *output, unsigned int numberOfSamples)
 {
     //LOGI("RECORDING: %d", numberOfSamples);
-    SuperpoweredShortIntToFloat(output, stereoBuffer, numberOfSamples);
-    audioRecorder->process(stereoBuffer, NULL, numberOfSamples);
+    //SuperpoweredShortIntToFloat(output, stereoBuffer, numberOfSamples);
+    //audioRecorder->process(stereoBuffer, NULL, numberOfSamples);
+    tracks.at(currentlyRecordingTrack)->recordProcess(output, numberOfSamples)
 }
 
 bool Looper::process(short int *output, unsigned int numberOfSamples) {
@@ -289,10 +274,9 @@ extern "C" JNIEXPORT void Java_com_smp_looperstudio_LooperActivity_onPlayPause(J
 }
 
 extern "C" JNIEXPORT void Java_com_smp_looperstudio_LooperActivity_onRecord(JNIEnv *javaEnvironment, jobject self, jboolean record) {
-    looper->onStartStopRecording(record);
+    looper->onStartStopRecording(record, 0); //TODO Select Track
 }
 
 #undef NUM_BUFFERS
 #undef HEADROOM_DECIBEL
-#undef INIT_BPM
 #undef NUM_TRACKS

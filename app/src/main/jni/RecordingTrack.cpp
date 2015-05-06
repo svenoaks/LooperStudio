@@ -35,7 +35,12 @@ RecordingTrack::RecordingTrack(unsigned int samplingRate, std::string filePath, 
 }
 
 void RecordingTrack::startRecord() {
+    recording = true;
     recorder.start(filePath.c_str());
+}
+void RecordingTrack::stopRecord() {
+    recorder.stop();
+    recording = false;
 }
 void RecordingTrack::recordProcess(short int *input, int numberOfSamples, double msFromStartPoint) {
     auto startPos = calculateBufferPos(msFromStartPoint);
