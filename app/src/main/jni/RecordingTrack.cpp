@@ -23,41 +23,61 @@ static void playerEventCallback(void *clientData, SuperpoweredAdvancedAudioPlaye
     };
 }
 
-RecordingTrack::RecordingTrack(unsigned int samplingRate, std::string filePath, double bpm) :
-    recorder((filePath + "_TEMP").c_str(), samplingRate),
+RecordingTrack::RecordingTrack(unsigned int samplingRate, std::string filePath, double bpm, int buffersize)
+    : recorder((filePath + "_TEMP").c_str(), samplingRate),
     recBuffer(INIT_SIZE, SILENCE),
-    filePath(filePath)
+    filePath(filePath),
+    recordingIndex(0),
+    recInMemory(false)
 {
     player = std::make_shared<SuperpoweredAdvancedAudioPlayer>(&player, playerEventCallback, samplingRate, CACHE_POINTS);
     //player->open(filePath.c_str(), start, end);
     player->syncMode = SuperpoweredAdvancedAudioPlayerSyncMode_TempoAndBeat;
     ::bpm = bpm;
+    stereoBuffer = (float *)memalign(16, (buffersize + 16) * sizeof(float) * 2);
+}
+RecordingTrack::~RecordingTrack() {
+    free(stereoBuffer);
 }
 
 void RecordingTrack::startRecord() {
     recording = true;
+    recInMemory = true;
     recorder.start(filePath.c_str());
 }
 void RecordingTrack::stopRecord() {
     recorder.stop();
     recording = false;
+    recordingIndex = 0;
 }
-void RecordingTrack::recordProcess(short int *input, int numberOfSamples, double msFromStartPoint) {
-    auto startPos = calculateBufferPos(msFromStartPoint);
+void RecordingTrack::recordProcess(short int *input, int numberOfSamples) {
     for(int c = 0; c < numberOfSamples; ++c)
     {
-        uint64_t i = startPos + c;
-        if(i < recBuffer.size()) {
-            recBuffer.at(i) = input[c];
+        if(recordingIndex < recBuffer.size()) {
+            recBuffer.at(recordingIndex++) = input[c];
         } else {
             recBuffer.push_back(input[c]);
+            ++recordingIndex;
         }
     }
+    SuperpoweredShortIntToFloat(input, stereoBuffer, numberOfSamples);
+    recorder.process(stereoBuffer, NULL, numberOfSamples);
 }
 void RecordingTrack::setBpm(double bpm) {
     ::bpm = bpm;
 }
-uint64_t RecordingTrack::calculateBufferPos(double msFromStartPoint) {
+
+void RecordingTrack::pause() {
+}
+void RecordingTrack::play() {
+}
+
+void RecordingTrack::playProcess(float *buffer, unsigned int numberOfSamples, float volume, double bpm, double masterMsElapsedSinceLastBeat) {
+    if (recInMemory) {
+        SuperpoweredShortIntToFloat(&recBuffer[0] + recordingIndex, buffer, numberOfSamples);
+        recordingIndex += numberOfSamples;
+    } else {
+    }
 }
 
 #undef CACHE_POINTS

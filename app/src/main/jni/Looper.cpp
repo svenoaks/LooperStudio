@@ -22,7 +22,7 @@ Looper::Looper(const char *path, int *params, bool useThreading, double bpm, int
                                         : activeFx(0), crossValue(0.0f), volB(0.0f), volA(1.0f * headroom), currentReadBuffer(0), currentWriteBuffer(0),
                                         fullBuffers(0), playing(false), buffersize(params[5]), useProcessThread(useThreading), 
                                         recording(false), metronome(std::string(path), params[0], params[1], params[4]), masterBpm(bpm),
-                                        samplesFromZero(0) {
+                                        samplesFromZero(0), queueRecording(false) {
 
     
     unsigned int samplerate = params[4];
@@ -37,7 +37,7 @@ Looper::Looper(const char *path, int *params, bool useThreading, double bpm, int
 
     for (int i = 0; i < NUM_TRACKS; ++i)
     {
-        tracks.push_back(std::make_shared<RecordingTrack>(samplerate, "/storage/emulated/0/Download/helltest.wav" + std::to_string(i), bpm));
+        tracks.push_back(std::make_shared<RecordingTrack>(samplerate, "/storage/emulated/0/Download/helltest.wav" + std::to_string(i), bpm, buffersize));
     }
 
 
@@ -159,7 +159,7 @@ void Looper::recordSamples(short int *output, unsigned int numberOfSamples)
     //LOGI("RECORDING: %d", numberOfSamples);
     //SuperpoweredShortIntToFloat(output, stereoBuffer, numberOfSamples);
     //audioRecorder->process(stereoBuffer, NULL, numberOfSamples);
-    tracks.at(currentlyRecordingTrack)->recordProcess(output, numberOfSamples)
+    tracks.at(currentlyRecordingTrack)->recordProcess(output, numberOfSamples);
 }
 
 bool Looper::process(short int *output, unsigned int numberOfSamples) {
@@ -210,8 +210,8 @@ bool Looper::renderSamples(short int *output, unsigned int numberOfSamples)
 
         double msElapsedSinceLastBeatA = metronome.getMsElapsedSinceLastBeat(); // When playerB needs it, metronome has already stepped this value, so save it now.
 
-        silence = !metronome.process(stereoBuffer, numberOfSamples, volA, masterBpm, playerB->msElapsedSinceLastBeat);
-        if (playerB->process(stereoBuffer, !silence, numberOfSamples, volB, masterBpm, msElapsedSinceLastBeatA)) silence = false;
+        silence = !metronome.process(stereoBuffer, numberOfSamples, volA, masterBpm, -1.0);
+
 
         roll->bpm = flanger->bpm = masterBpm; // Syncing fx is one line.
 

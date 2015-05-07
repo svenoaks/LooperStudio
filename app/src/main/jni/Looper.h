@@ -60,6 +60,7 @@ private:
 
     std::atomic_bool playing;
     std::atomic_bool recording;
+    std::atomic_bool queueRecording;
     std::atomic_int currentlyRecordingTrack;
 
     std::atomic_bool useProcessThread;
