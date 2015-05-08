@@ -10,6 +10,7 @@
 #include "SuperpoweredRecorder.h"
 #include "utility.h"
 #include "SuperpoweredSimple.h"
+#include "OnMeasureCompleteListener.h"
 
 
 
@@ -20,7 +21,8 @@ class RecordingTrack {
     void startRecord();
     void stopRecord();
     void recordProcess(short int *, int);
-    void playProcess(float *buffer, unsigned int numberOfSamples, float volume, double bpm, double masterMsElapsedSinceLastBeat);
+    double getMsElapsedSinceLastBeat();
+    bool playProcess(float *buffer, unsigned int numberOfSamples, float volume, double bpm, double masterMsElapsedSinceLastBeat);
     void play();
     void pause();
     private:

@@ -6,11 +6,12 @@
 #include <vector>
 #include <memory>
 #include "SuperpoweredAdvancedAudioPlayer.h"
+#include "OnMeasureCompleteListener.h"
 
 
 class Metronome {
     public:
-    Metronome(std::string, int, int, int samplingRate);
+    Metronome(std::string, int, int, int samplingRate, OnMeasureCompleteListener*);
     void startRecord();
     void recordBytes(std::vector<short int>);
     void play();
@@ -20,6 +21,7 @@ class Metronome {
     bool process(float *buffer, unsigned int numberOfSamples, float volume, double bpm, double masterMsElapsedSinceLastBeat);
     private:
     std::shared_ptr<SuperpoweredAdvancedAudioPlayer> player;
+    OnMeasureCompleteListener* listener;
 };
 
 #endif

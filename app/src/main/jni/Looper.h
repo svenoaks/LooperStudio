@@ -19,6 +19,7 @@
 #include "SuperpoweredRecorder.h"
 #include "Metronome.h"
 #include "RecordingTrack.h"
+#include "OnMeasureCompleteListener.h"
 
 #define NUM_BUFFERS 2
 #define HEADROOM_DECIBEL 3.0f
@@ -26,7 +27,7 @@
 
 static const float headroom = powf(10.0f, -HEADROOM_DECIBEL * 0.025);
 
-class Looper {
+class Looper : public OnMeasureCompleteListener {
 public:
 
 	Looper(const char *path, int *params, bool, double bpm=120, int measures=4, int beatsPerMeasure=4);
@@ -41,13 +42,15 @@ public:
 	void onFxOff();
 	void onFxValue(int value);
 	void setBpm(double bpm);
+	void onMeasureComplete();
 
 private:
     void processLoop();
 
     double masterBpm;
     int measures, beatsPerMeasure;
-    int samplesFromZero;
+
+    int currentMeasure, currentBeat;
 
     void recordSamples(short int *, unsigned int);
     bool renderSamples(short int *, unsigned int);
@@ -71,8 +74,6 @@ private:
     std::vector<std::shared_ptr<RecordingTrack>> tracks;
 
     std::mutex mutex;
-
-    std::shared_ptr<SuperpoweredRecorder> audioRecorder;
 
     SuperpoweredAndroidAudioIO *audioSystem;
     SuperpoweredRoll *roll;

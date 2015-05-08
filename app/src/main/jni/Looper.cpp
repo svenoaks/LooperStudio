@@ -5,11 +5,11 @@
 #include <jni.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <android/log.h>
+
 #include <thread>
 #include <string>
 
-#define LOGI(...)   __android_log_print((int)ANDROID_LOG_INFO, "SOUNDPROCESS", __VA_ARGS__)
+
 
 
 
@@ -18,18 +18,35 @@ static bool audioplaying(void *clientdata, short int *audioIO, int numberOfSampl
 	return ((Looper *)clientdata)->process(audioIO, numberOfSamples);
 }
 
+void Looper::onMeasureComplete() {
+    ++currentMeasure;
+    LOGI("measure: %d", currentMeasure);
+    if (currentMeasure > measures) {
+        currentMeasure = 1;
+        if (recording) {
+            LOGI("stop recording");
+            recording = false;
+            tracks.at(currentlyRecordingTrack)->stopRecord();
+        }
+        if (queueRecording) {
+            LOGI("start recording");
+            queueRecording = false;
+            recording = true;
+            tracks.at(currentlyRecordingTrack)->startRecord();
+        }
+    }
+}
+
 Looper::Looper(const char *path, int *params, bool useThreading, double bpm, int measures, int beatsPerMeasure)
                                         : activeFx(0), crossValue(0.0f), volB(0.0f), volA(1.0f * headroom), currentReadBuffer(0), currentWriteBuffer(0),
                                         fullBuffers(0), playing(false), buffersize(params[5]), useProcessThread(useThreading), 
-                                        recording(false), metronome(std::string(path), params[0], params[1], params[4]), masterBpm(bpm),
-                                        samplesFromZero(0), queueRecording(false) {
+                                        recording(false), metronome(std::string(path), params[0], params[1], params[4], this), masterBpm(bpm),
+                                        queueRecording(false), currentBeat(1), currentMeasure(1), measures(measures), beatsPerMeasure(beatsPerMeasure) {
 
     
     unsigned int samplerate = params[4];
     std::fill(processed.begin(), processed.end(), std::vector<short int>(buffersize * 2 + 16));
     stereoBuffer = (float *)memalign(16, (buffersize + 16) * sizeof(float) * 2);
-
-    audioRecorder = std::make_shared<SuperpoweredRecorder>("/storage/emulated/0/Download/helltest.wav", samplerate);
 
     roll = new SuperpoweredRoll(samplerate);
     filter = new SuperpoweredFilter(SuperpoweredFilter_Resonant_Lowpass, samplerate);
@@ -37,9 +54,9 @@ Looper::Looper(const char *path, int *params, bool useThreading, double bpm, int
 
     for (int i = 0; i < NUM_TRACKS; ++i)
     {
-        tracks.push_back(std::make_shared<RecordingTrack>(samplerate, "/storage/emulated/0/Download/helltest.wav" + std::to_string(i), bpm, buffersize));
+        tracks.push_back(std::make_shared<RecordingTrack>(samplerate, "/storage/emulated/0/Download/helltest" + std::to_string(i), bpm, buffersize));
     }
-
+    onCrossfader(50);
 
     audioSystem = new SuperpoweredAndroidAudioIO(samplerate, buffersize, true, true, audioplaying, this, buffersize * 2);
     audioSystem->start();
@@ -60,13 +77,12 @@ void Looper::onStartStopRecording(bool record, int trackToRecord) {
     std::unique_lock<std::mutex> lock(mutex);
     if(!record) {
         recording = false;
-        audioRecorder->stop();
+        tracks.at(currentlyRecordingTrack)->stopRecord();
     }
     else {
         LOGI("RECORDING");
         currentlyRecordingTrack = trackToRecord;
-        recording = true;
-        tracks.at(currentlyRecordingTrack)->startRecord();
+        queueRecording = true;
     }
    
 }
@@ -79,7 +95,7 @@ void Looper::onPlayPause(bool play) {
     } else {
         bool masterIsA = (crossValue <= 0.5f);
         metronome.play();
-        for (auto&& track : tracks) track->play();
+        //for (auto&& track : tracks) track->play();
         playing = true;
         if (useProcessThread)
         {
@@ -210,8 +226,8 @@ bool Looper::renderSamples(short int *output, unsigned int numberOfSamples)
 
         double msElapsedSinceLastBeatA = metronome.getMsElapsedSinceLastBeat(); // When playerB needs it, metronome has already stepped this value, so save it now.
 
-        silence = !metronome.process(stereoBuffer, numberOfSamples, volA, masterBpm, -1.0);
-
+        silence = !metronome.process(stereoBuffer, numberOfSamples, volA, masterBpm, tracks.at(currentlyRecordingTrack)->getMsElapsedSinceLastBeat());
+        if (tracks.at(currentlyRecordingTrack)->playProcess(stereoBuffer, numberOfSamples, volB, masterBpm, msElapsedSinceLastBeatA)) silence = false;
 
         roll->bpm = flanger->bpm = masterBpm; // Syncing fx is one line.
 

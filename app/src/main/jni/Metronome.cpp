@@ -5,6 +5,7 @@
 #define START_POINT 0
 #define NO_ID 255
 
+static OnMeasureCompleteListener* listener;
 static void playerEventCallback(void *clientData, SuperpoweredAdvancedAudioPlayerEvent event,
                                                                                  void *value) {
 
@@ -17,15 +18,18 @@ static void playerEventCallback(void *clientData, SuperpoweredAdvancedAudioPlaye
 
     }
     else if (event == SuperpoweredAdvancedAudioPlayerEvent_EOF) {
-            player->setPosition(START_POINT, false, true);
+        player->setPosition(START_POINT, false, true);
+        listener->onMeasureComplete();
     };
 }
 
-Metronome::Metronome(std::string filePath, int start, int end, int samplingRate)
+Metronome::Metronome(std::string filePath, int start, int end, int samplingRate, OnMeasureCompleteListener* listener)
+    : listener(listener)
 {
     player = std::make_shared<SuperpoweredAdvancedAudioPlayer>(&player, playerEventCallback, samplingRate, CACHE_POINTS);
     player->open(filePath.c_str(), start, end);
     player->syncMode = SuperpoweredAdvancedAudioPlayerSyncMode_TempoAndBeat;
+    ::listener = listener;
 }
 
 void Metronome::play() {

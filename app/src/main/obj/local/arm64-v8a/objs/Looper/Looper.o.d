@@ -62,8 +62,10 @@
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredAndroidAudioIO.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredRecorder.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/Metronome.h \
+ /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/OnMeasureCompleteListener.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/RecordingTrack.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/utility.h \
+ /Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/android/log.h \
  /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/sstream \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredSimple.h \
  /Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/jni.h \
@@ -71,7 +73,6 @@
  /Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/alloca.h \
  /Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/strings.h \
  /Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/memory.h \
- /Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/android/log.h \
  /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/thread
 
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/Looper.h:
@@ -198,9 +199,13 @@
 
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/Metronome.h:
 
+/Users/Steve/Code/Git/LooperStudio/app/src/main/jni/OnMeasureCompleteListener.h:
+
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/RecordingTrack.h:
 
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/utility.h:
+
+/Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/android/log.h:
 
 /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/sstream:
 
@@ -215,7 +220,5 @@
 /Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/strings.h:
 
 /Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/memory.h:
-
-/Applications/sdk/android-ndk-r10d/platforms/android-21/arch-arm64/usr/include/android/log.h:
 
 /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/thread:

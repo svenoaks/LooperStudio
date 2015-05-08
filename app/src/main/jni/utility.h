@@ -1,8 +1,10 @@
 #ifndef Header_Utility
 #define Header_Utility
-
+#include <android/log.h>
 #include <string>
 #include <sstream>
+
+#define LOGI(...)   __android_log_print((int)ANDROID_LOG_INFO, "SOUNDPROCESS", __VA_ARGS__)
 
 namespace std {
     template <typename T>

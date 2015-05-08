@@ -7,8 +7,10 @@
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredAdvancedAudioPlayer.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredRecorder.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/utility.h \
+ /Applications/sdk/android-ndk-r10d/platforms/android-9/arch-arm/usr/include/android/log.h \
  /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/sstream \
- /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredSimple.h
+ /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredSimple.h \
+ /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/OnMeasureCompleteListener.h
 
 /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/thread:
 
@@ -24,6 +26,10 @@
 
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/utility.h:
 
+/Applications/sdk/android-ndk-r10d/platforms/android-9/arch-arm/usr/include/android/log.h:
+
 /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/sstream:
 
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredSimple.h:
+
+/Users/Steve/Code/Git/LooperStudio/app/src/main/jni/OnMeasureCompleteListener.h:
