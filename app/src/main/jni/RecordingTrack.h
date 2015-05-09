@@ -25,12 +25,12 @@ class RecordingTrack {
     bool playProcess(float *buffer, unsigned int numberOfSamples, float volume, double bpm, double masterMsElapsedSinceLastBeat);
     void play();
     void pause();
-    private:
-    std::atomic_bool recording, recInMemory;
-    std::atomic_llong recordingIndex;
-
-    void setBpm(double);
     std::shared_ptr<SuperpoweredAdvancedAudioPlayer> player;
+    private:
+    std::atomic_bool recording, recInMemory, playerIsPlayable;
+    std::atomic_llong recordingIndex;
+    void setBpm(double);
+    double bpm;
     SuperpoweredRecorder recorder;
     std::vector<short int> recBuffer;
     std::string filePath;

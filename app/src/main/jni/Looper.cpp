@@ -40,7 +40,7 @@ void Looper::onMeasureComplete() {
 Looper::Looper(const char *path, int *params, bool useThreading, double bpm, int measures, int beatsPerMeasure)
                                         : activeFx(0), crossValue(0.0f), volB(0.0f), volA(1.0f * headroom), currentReadBuffer(0), currentWriteBuffer(0),
                                         fullBuffers(0), playing(false), buffersize(params[5]), useProcessThread(useThreading), 
-                                        recording(false), metronome(std::string(path), params[0], params[1], params[4], this), masterBpm(bpm),
+                                        recording(false), metronome(std::string(path), params[0], params[1], params[4], std::shared_ptr<Looper>(this)), masterBpm(bpm),
                                         queueRecording(false), currentBeat(1), currentMeasure(1), measures(measures), beatsPerMeasure(beatsPerMeasure) {
 
     
@@ -57,7 +57,7 @@ Looper::Looper(const char *path, int *params, bool useThreading, double bpm, int
         tracks.push_back(std::make_shared<RecordingTrack>(samplerate, "/storage/emulated/0/Download/helltest" + std::to_string(i), bpm, buffersize));
     }
     onCrossfader(50);
-
+    //std::unique_lock<std::mutex> lock(mutex);
     audioSystem = new SuperpoweredAndroidAudioIO(samplerate, buffersize, true, true, audioplaying, this, buffersize * 2);
     audioSystem->start();
 }
@@ -226,17 +226,17 @@ bool Looper::renderSamples(short int *output, unsigned int numberOfSamples)
 
         double msElapsedSinceLastBeatA = metronome.getMsElapsedSinceLastBeat(); // When playerB needs it, metronome has already stepped this value, so save it now.
 
-        silence = !metronome.process(stereoBuffer, numberOfSamples, volA, masterBpm, tracks.at(currentlyRecordingTrack)->getMsElapsedSinceLastBeat());
-        if (tracks.at(currentlyRecordingTrack)->playProcess(stereoBuffer, numberOfSamples, volB, masterBpm, msElapsedSinceLastBeatA)) silence = false;
+        silence = !metronome.process(stereoBuffer, numberOfSamples, volA, masterBpm, -1.0);//tracks.at(currentlyRecordingTrack)->getMsElapsedSinceLastBeat());
+        //if (tracks.at(currentlyRecordingTrack)->playProcess(stereoBuffer, numberOfSamples, volB, masterBpm, -1.0)) silence = false;
 
-        roll->bpm = flanger->bpm = masterBpm; // Syncing fx is one line.
+        /*roll->bpm = flanger->bpm = masterBpm; // Syncing fx is one line.
 
         if (roll->process(silence ? NULL : stereoBuffer, stereoBuffer, numberOfSamples) && silence) silence = false;
         if (!silence) {
             filter->process(stereoBuffer, stereoBuffer, numberOfSamples);
             flanger->process(stereoBuffer, stereoBuffer, numberOfSamples);
         };
-
+        */
         // The stereoBuffer is ready now, let's put the finished audio into the requested buffers.
         if(!silence)
         {
@@ -270,7 +270,7 @@ void Looper::setBpm(double bpm)
 
 
 
-static Looper *looper = NULL;
+static std::shared_ptr<Looper> looper;
 // Android is not passing more than 2 custom parameters, so we had to pack file offsets and lengths into an array.
 extern "C" JNIEXPORT void Java_com_smp_looperstudio_LooperActivity_Looper(JNIEnv *javaEnvironment, jobject self, jstring apkPath, jlongArray params, jboolean useThreading) {
     // Convert the input jlong array to a regular int array.
@@ -280,7 +280,7 @@ extern "C" JNIEXPORT void Java_com_smp_looperstudio_LooperActivity_Looper(JNIEnv
     javaEnvironment->ReleaseLongArrayElements(params, longParams, JNI_ABORT);
 
     const char *path = javaEnvironment->GetStringUTFChars(apkPath, JNI_FALSE);
-    looper = new Looper(path, arr, useThreading);
+    looper = std::make_shared<Looper>(path, arr, useThreading);
     javaEnvironment->ReleaseStringUTFChars(apkPath, path);
 
 }

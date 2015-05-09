@@ -13,7 +13,8 @@ static int bpm;
 
 static void playerEventCallback(void *clientData, SuperpoweredAdvancedAudioPlayerEvent event,
                                                                                         void *value) {
-    SuperpoweredAdvancedAudioPlayer *player = *((SuperpoweredAdvancedAudioPlayer **)clientData);
+    RecordingTrack& track = *((RecordingTrack*)clientData);
+    auto player = track.player;
     if (event == SuperpoweredAdvancedAudioPlayerEvent_LoadSuccess) {
         player->setBpm(bpm);
         player->setFirstBeatMs(START_POINT);
@@ -32,15 +33,16 @@ RecordingTrack::RecordingTrack(unsigned int samplingRate, std::string filePath, 
     recBuffer(INIT_SIZE, SILENCE),
     filePath(filePath),
     recordingIndex(0),
-    recInMemory(false)
+    recInMemory(false),
+    playerIsPlayable(false),
+    bpm(bpm)
 {
-    player = std::make_shared<SuperpoweredAdvancedAudioPlayer>(&player, playerEventCallback, samplingRate, CACHE_POINTS);
+    player = std::make_shared<SuperpoweredAdvancedAudioPlayer>(this, playerEventCallback, samplingRate, CACHE_POINTS);
     //player->open(filePath.c_str(), start, end);
 
-    //player->open((filePath + std::string(".wav")).c_str());
-    //player->syncMode = SuperpoweredAdvancedAudioPlayerSyncMode_TempoAndBeat;
+    player->open((filePath + std::string(".wav")).c_str());
+    player->syncMode = SuperpoweredAdvancedAudioPlayerSyncMode_TempoAndBeat;
     LOGI("%s", filePath.c_str());
-    ::bpm = bpm;
     stereoBuffer = (float *)memalign(16, (buffersize + 16) * sizeof(float) * 2);
 }
 RecordingTrack::~RecordingTrack() {
@@ -57,8 +59,8 @@ void RecordingTrack::stopRecord() {
     recording = false;
     recInMemory = false;
     recordingIndex = 0;
-    player->open((filePath + std::string(".wav")).c_str());
-    player->syncMode = SuperpoweredAdvancedAudioPlayerSyncMode_TempoAndBeat;
+    //player->open((filePath + std::string(".wav")).c_str());
+    //player->syncMode = SuperpoweredAdvancedAudioPlayerSyncMode_TempoAndBeat;
 }
 void RecordingTrack::recordProcess(short int *input, int numberOfSamples) {
     for(int c = 0; c < numberOfSamples; ++c)
@@ -74,7 +76,7 @@ void RecordingTrack::recordProcess(short int *input, int numberOfSamples) {
     recorder.process(stereoBuffer, NULL, numberOfSamples);
 }
 void RecordingTrack::setBpm(double bpm) {
-    ::bpm = bpm;
+    this->bpm = bpm;
 }
 double RecordingTrack::getMsElapsedSinceLastBeat() {
     return player->msElapsedSinceLastBeat;

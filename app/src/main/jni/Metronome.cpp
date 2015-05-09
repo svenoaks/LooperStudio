@@ -5,11 +5,12 @@
 #define START_POINT 0
 #define NO_ID 255
 
-static OnMeasureCompleteListener* listener;
 static void playerEventCallback(void *clientData, SuperpoweredAdvancedAudioPlayerEvent event,
                                                                                  void *value) {
 
-    SuperpoweredAdvancedAudioPlayer *player = *((SuperpoweredAdvancedAudioPlayer **)clientData);
+    Metronome& metronome = *((Metronome*)clientData);
+    auto player = metronome.player;
+    auto listener = metronome.listener;
     if (event == SuperpoweredAdvancedAudioPlayerEvent_LoadSuccess) {
         player->setBpm(RECORDED_BPM);
         player->setFirstBeatMs(START_POINT);
@@ -23,13 +24,12 @@ static void playerEventCallback(void *clientData, SuperpoweredAdvancedAudioPlaye
     };
 }
 
-Metronome::Metronome(std::string filePath, int start, int end, int samplingRate, OnMeasureCompleteListener* listener)
+Metronome::Metronome(std::string filePath, int start, int end, int samplingRate, std::shared_ptr<OnMeasureCompleteListener> listener)
     : listener(listener)
 {
-    player = std::make_shared<SuperpoweredAdvancedAudioPlayer>(&player, playerEventCallback, samplingRate, CACHE_POINTS);
+    player = std::make_shared<SuperpoweredAdvancedAudioPlayer>(this, playerEventCallback, samplingRate, CACHE_POINTS);
     player->open(filePath.c_str(), start, end);
     player->syncMode = SuperpoweredAdvancedAudioPlayerSyncMode_TempoAndBeat;
-    ::listener = listener;
 }
 
 void Metronome::play() {
