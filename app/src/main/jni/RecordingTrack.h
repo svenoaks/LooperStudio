@@ -26,8 +26,9 @@ class RecordingTrack {
     void play();
     void pause();
     std::shared_ptr<SuperpoweredAdvancedAudioPlayer> player;
+    std::atomic_bool playerIsPlayable;
     private:
-    std::atomic_bool recording, recInMemory, playerIsPlayable;
+    std::atomic_bool recording, recInMemory;
     std::atomic_llong recordingIndex;
     void setBpm(double);
     double bpm;

@@ -225,9 +225,9 @@ bool Looper::renderSamples(short int *output, unsigned int numberOfSamples)
         //LOGI("sam %d %d", numberOfSamples, currentWriteBuffer);
 
         double msElapsedSinceLastBeatA = metronome.getMsElapsedSinceLastBeat(); // When playerB needs it, metronome has already stepped this value, so save it now.
-
+        auto& playable = tracks.at(currentlyRecordingTrack)->playerIsPlayable;
         silence = !metronome.process(stereoBuffer, numberOfSamples, volA, masterBpm, -1.0);//tracks.at(currentlyRecordingTrack)->getMsElapsedSinceLastBeat());
-        //if (tracks.at(currentlyRecordingTrack)->playProcess(stereoBuffer, numberOfSamples, volB, masterBpm, -1.0)) silence = false;
+        if (playable && tracks.at(currentlyRecordingTrack)->playProcess(stereoBuffer, numberOfSamples, volB, masterBpm, -1.0)) silence = false;
 
         /*roll->bpm = flanger->bpm = masterBpm; // Syncing fx is one line.
 

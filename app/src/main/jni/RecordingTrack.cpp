@@ -21,12 +21,14 @@ static void playerEventCallback(void *clientData, SuperpoweredAdvancedAudioPlaye
         player->setPosition(player->firstBeatMs, false, false);
         player->cachePosition(START_POINT, NO_ID);
         player->play(true);
+        track.playerIsPlayable = true;
         LOGI("LOADED!");
     }
     else if (event == SuperpoweredAdvancedAudioPlayerEvent_EOF) {
         player->setPosition(START_POINT, false, false);
     };
 }
+
 
 RecordingTrack::RecordingTrack(unsigned int samplingRate, std::string filePath, double bpm, int buffersize)
     : recorder((filePath + "_TEMP").c_str(), samplingRate),
