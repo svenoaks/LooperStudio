@@ -48,6 +48,7 @@
  /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/atomic \
  /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/memory \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredAdvancedAudioPlayer.h \
+ /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredMixer.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredFilter.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredFX.h \
  /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredRoll.h \
@@ -163,6 +164,8 @@
 /Applications/sdk/android-ndk-r10d/sources/cxx-stl/gnu-libstdc++/4.9/include/memory:
 
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredAdvancedAudioPlayer.h:
+
+/Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredMixer.h:
 
 /Users/Steve/Code/Git/LooperStudio/app/src/main/jni/SuperpoweredFilter.h:
 

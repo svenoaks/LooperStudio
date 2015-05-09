@@ -12,6 +12,7 @@
 #include <memory>
 
 #include "SuperpoweredAdvancedAudioPlayer.h"
+#include "SuperpoweredMixer.h"
 #include "SuperpoweredFilter.h"
 #include "SuperpoweredRoll.h"
 #include "SuperpoweredFlanger.h"
@@ -21,8 +22,9 @@
 #include "RecordingTrack.h"
 #include "OnMeasureCompleteListener.h"
 
+
 #define NUM_BUFFERS 2
-#define HEADROOM_DECIBEL 3.0f
+#define HEADROOM_DECIBEL 5.0f
 #define NUM_TRACKS 8
 
 static const float headroom = powf(10.0f, -HEADROOM_DECIBEL * 0.025);
@@ -72,8 +74,11 @@ private:
 
     Metronome metronome;
     std::vector<std::shared_ptr<RecordingTrack>> tracks;
+    std::array<float*, NUM_TRACKS + 1> trackBuffers; //+1 for metronome
 
     std::mutex mutex;
+
+    SuperpoweredStereoMixer mixer;
 
     SuperpoweredAndroidAudioIO *audioSystem;
     SuperpoweredRoll *roll;

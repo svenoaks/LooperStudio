@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
 import android.os.Build;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -14,7 +14,7 @@ import android.view.View;
 import java.io.IOException;
 
 
-public class LooperActivity extends ActionBarActivity
+public class LooperActivity extends AppCompatActivity
 {
     private boolean recording = false;
     private boolean playing = false;
@@ -34,7 +34,6 @@ public class LooperActivity extends ActionBarActivity
         }
         if (samplerateString == null) samplerateString = "44100";
         if (buffersizeString == null) buffersizeString = "512";
-
         Log.i("INFOBLAHBLAH", buffersizeString);
         // Files under res/raw are not compressed, just copied into the APK. Get the offset and length to know where our files are located.
         AssetFileDescriptor fd0 = getResources().openRawResourceFd(R.raw.fourfour), fd1 = getResources().openRawResourceFd(R.raw.nuyorica);
